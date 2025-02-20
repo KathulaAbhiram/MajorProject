@@ -10,11 +10,34 @@ const typeDefs = gql`
     name: String
     email: String
   }
+
+  type Appointment {
+    id: ID
+    userId: String
+    doctorId: ID
+    time: String
+    status: String
+  }
+
+  type Favorite {
+    id: ID
+    userId: ID
+    favoriteDoctorId: ID
+  }
   
   type Query {
     getUsers: [User]
     getUserById(id: ID!): [User]
+
+    getAppointments(userId: ID!): [Appointment]
+    getFavorites(userId: ID!): [Favorite]
   }
+
+  type Mutation {
+    bookAppointment(userId: ID!, doctorId: ID!, time: String!): Appointment
+    addToFavorites(userId: ID!, doctorId: ID!): Favorite
+  }
+
 `;
 
 // Resolvers
@@ -43,6 +66,60 @@ const resolvers = {
         return await response.json();
       } catch (error) {
         console.error("getUserById Error:", error.message);
+        return null;
+      }
+    },
+
+    getAppointments: async (_, { userId }) => {
+      try {
+        let c=0
+        const response = await fetch(`https://cloudfuncdep.azurewebsites.net/api/bookAppointment?userId=${userId}&action=0`);
+        if (!response.ok) throw new Error("Failed to fetch appointments");
+        return await response.json();
+      } catch (error) {
+        console.error("getAppointments Error:", error.message);
+        return [];
+      }
+    },
+
+    getFavorites: async (_, { userId }) => {
+      try {
+        const response = await fetch(`https://cloudfuncdep.azurewebsites.net/api/manageFavorites?userId=${userId}&action=0`);
+        if (!response.ok) throw new Error("Failed to fetch favorites");
+        return await response.json();
+      } catch (error) {
+        console.error("getFavorites Error:", error.message);
+        return [];
+      }
+    },
+  },
+
+  Mutation: {
+    bookAppointment: async (_, { userId, doctorId, time }) => {
+      try {
+        const response = await fetch(`https://cloudfuncdep.azurewebsites.net/api/bookAppointment?action=1`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, doctorId, time, status: "Booked" }),
+        });
+        if (!response.ok) throw new Error("Failed to book appointment");
+        return await response.json();
+      } catch (error) {
+        console.error("bookAppointment Error:", error.message);
+        return null;
+      }
+    },
+    addToFavorites: async (_, { userId, doctorId }) => {
+      try {
+        const response = await fetch(`https://cloudfuncdep.azurewebsites.net/api/addToFavorites?action=1`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, favoriteDoctorId: doctorId }),
+        });
+        if (!response.ok) throw new Error("Failed to add to favorites");
+        return await response.json();
+      } catch (error) {
+        console.error("addToFavorites Error:", error.message);
         return null;
       }
     },
