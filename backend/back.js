@@ -72,7 +72,6 @@ const resolvers = {
 
     getAppointments: async (_, { userId }) => {
       try {
-        let c=0
         const response = await fetch(`https://cloudfuncdep.azurewebsites.net/api/bookAppointment?userId=${userId}&action=0`);
         if (!response.ok) throw new Error("Failed to fetch appointments");
         return await response.json();
